@@ -67,8 +67,11 @@ summary(MD_SAV_Sh)
 #Combine----------------------------------------
 SAV_Sh = rbind(VA_SAV_Sh, MD_SAV_Sh)
 
-#GIS gave NA to 0 SAV segments, correct this:
-SAV_Sh[is.na(SAV_Sh$sav89_13m2),c('sav89_13m2', 'savPCTphab')]=0
+#GIS gave NA to 0 SAV segments, add fields where these are 0, but keep NAs:
+SAV_Sh = SAV_Sh %>% mutate(SAV = sav89_13m2, Hab = pothabm2, OccHab = savPCTphab)
+
+SAV_Sh[is.na(SAV_Sh$SAV),c('SAV', 'Hab')]=0
+SAV_Sh[is.na(SAV_Sh$OccHab),'OccHab']=0
 
 #Add subestuary metrics--------------------------------------------------------------------
 SubEst = read.csv("L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Subest_Metrics.csv", skip = 1)
@@ -79,3 +82,16 @@ SubEst %>% select(CODE, NAME, BIGNAME, SALINZONE, LANDCAT, RiprapPerc, BulkheadP
                  FOREST06, WETLAND06,IMPERVI11pct,DEV06, CROP06, MarshPhragPerc,MarshNoPhragPerc)
 
 SAV_Sh = left_join(SAV_Sh, SubEst_Sel, by = c("SubEst"="CODE"))
+SAV_Sh$SubEst = factor(SAV_Sh$SubEst)
+
+#Drop NA subestuary records
+SAV_Sh = SAV_Sh[SAV_Sh$SubEst!='',]
+SAV_Sh$SubEst = factor(SAV_Sh$SubEst)
+
+#Examine shoreline segment length, and select a reasonable subset of lengths--------------
+hist(log(SAV_Sh$Length_m))
+
+quantile(SAV_Sh$Length_m, na.rm=TRUE, probs = seq(0,1,.1))
+
+SAV_Sh1 = filter(SAV_Sh, Length_m < 450, Length_m > 25)
+
