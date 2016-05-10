@@ -12,15 +12,15 @@ MD_Sh_LUFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/MDlubcFEAT
 SubEstFile =  "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/Subest_Metrics.csv"
 SubEstHucFile =  "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/SubEst_Huc.txt"
 
-# # Files on PC -----------------------------
-# VA_SAV_StrFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\VAeucasstru_spJ_SummarizeWit_sav98_13.csv"
-# VA_Sh_LUFile   = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\VAlubcFEATURE2.csv"
-# 
-# MD_SAV_StrFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\MDeucasstru_spJ_SummarizeWit_sav98_13.csv"
-# MD_Sh_LUFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\MDlubcFEATURE2.csv"
-# 
-# SubEstFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Subest_Metrics.csv"
-# SubEstHucFile =  "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/SubEst_Huc.txt"
+# Files on PC -----------------------------
+VA_SAV_StrFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\VAeucasstru_spJ_SummarizeWit_sav98_13.csv"
+VA_Sh_LUFile   = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\VAlubcFEATURE2.csv"
+
+MD_SAV_StrFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\MDeucasstru_spJ_SummarizeWit_sav98_13.csv"
+MD_Sh_LUFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\MDlubcFEATURE2.csv"
+
+SubEstFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Subest_Metrics.csv"
+SubEstHucFile =  "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\SubEst_Huc.txt"
 
 
 #Load and Prep Maryland Data ------------------------------------------------- 
