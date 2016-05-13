@@ -2,15 +2,15 @@ library(tidyr)
 library(dplyr)
 #file.choose()
 
-# Files on Mac ---------------------------
-VA_SAV_StrFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/VAeucasstru_spJ_SummarizeWit_sav98_13.csv"
-VA_Sh_LUFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/VAlubcFEATURE2.csv"
-
-MD_SAV_StrFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/MDeucasstru_spJ_SummarizeWit_sav98_13.csv"
-MD_Sh_LUFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/MDlubcFEATURE2.csv"
-
-SubEstFile =  "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/Subest_Metrics.csv"
-SubEstHucFile =  "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/SubEst_Huc.txt"
+# # Files on Mac ---------------------------
+# VA_SAV_StrFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/VAeucasstru_spJ_SummarizeWit_sav98_13.csv"
+# VA_Sh_LUFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/VAlubcFEATURE2.csv"
+# 
+# MD_SAV_StrFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/MDeucasstru_spJ_SummarizeWit_sav98_13.csv"
+# MD_Sh_LUFile = "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/MDlubcFEATURE2.csv"
+# 
+# SubEstFile =  "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/Subest_Metrics.csv"
+# SubEstHucFile =  "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/SubEst_Huc.txt"
 
 # Files on PC -----------------------------
 VA_SAV_StrFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\VAeucasstru_spJ_SummarizeWit_sav98_13.csv"
@@ -124,7 +124,7 @@ SAV_Sh = SAV_Sh[SAV_Sh$SubEst!='',]
 SAV_Sh$SubEst = factor(SAV_Sh$SubEst)
 
 # Add other HUC scales
-SAV_Sh = mutate(SAV_Sh1, 
+SAV_Sh = mutate(SAV_Sh, 
                 HUC_6 = factor(substr(HUC_8,1,6)),
                 HUC_4 = factor(substr(HUC_8,1,4)))
 SAV_Sh$HUC_8 = factor(SAV_Sh$HUC_8)
