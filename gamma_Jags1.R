@@ -31,10 +31,25 @@ model{
     yhat_RS[k] <- mu_CB # + landcover?
   }
   
+  # to get variance components on the prediction scale
+  for (n in 1:100){
+    newmu_RS[n]    ~ dnorm(mu_CB, tau_RS)
+    newProp_RS[n] <- ilogit(newmu_RS[n])
+    newmu_SE[n]    ~ dnorm(mu_CB, tau_SE)
+    newProp_SE[n] <- ilogit(newmu_SE[n])
+  }
+  
+  sd_newProp_RS  <- sd(newProp_RS[])
+  var_newProp_RS <- sd_newProp_RS^2
+  sd_newProp_SE  <- sd(newProp_SE[])
+  var_newProp_SE <- sd_newProp_SE^2
+  sd_Sal <- sd(B_Sal[])
+  
   var_y_hat <- sig_St^-2
   sig_St    ~ dunif(0,10000)
   tau_RS <- sig_RS^-2
   sig_RS  ~ dunif(0,100)
+  sig2_RS <- ilogit(sig_RS)
   tau_SE <- sig_SE^-2
   sig_SE  ~ dunif(0,100)
   #tau_Sal <- sig_Sal^-2

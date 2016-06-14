@@ -13,7 +13,8 @@ model{
     SAV_hat[i] <- Prop[i]*Hab[i] # or exp(mu[SubEst[i]])*Hab[i] # or ilogit(mu[SubEst[i]])*Hab[i]
     #Prop[i]    <- Prop_SE[SubEst[i]]
     #Prop[i] <- ilogit(Subest + RivSys)
-    Prop[i] <- ilogit(mu_SE[SubEst[i]] + B_BH * BH[i] + B_RR * RR[i])
+    Prop[i] <- ilogit(mu_SE[SubEst[i]] + B_BH * BH[i] + B_RR * RR[i]+
+                        B_BH_Sal[Sal[i]]*BH[i] + B_RR_Sal[Sal[i]]*RR[i])
   }
   
   for (j in 1:NSubEst) {
@@ -27,7 +28,7 @@ model{
   for (k in 1:NRivSys) {
     #Prop_RS[k] ~ dbeta(Prop) 
     Prop_RS[k] <- ilogit(mu_RS[k])
-    mu_RS[k]    ~dnorm(yhat_RS[k], tau_RS) # <- yhat_RS[k] #
+    mu_RS[k]    ~ dnorm(yhat_RS[k], tau_RS) # <- yhat_RS[k] #
     yhat_RS[k] <- mu_CB # + landcover?
   }
   
@@ -45,8 +46,12 @@ model{
   
   for(i in 2:NSal){
     B_Sal[i]  ~ dnorm(0, .0001)
+    B_BH_Sal[i] ~ dnorm(0, .0001)
+    B_RR_Sal[i] ~ dnorm(0, .0001)
   }
   B_Sal[1] <- -mean(B_Sal[2:NSal]) 
+  B_BH_Sal[1] <- 0#-mean(B_BH_Sal[2:NSal]) 
+  B_RR_Sal[1] <- 0#-mean(B_RR_Sal[2:NSal]) 
   #B_Sal[1] <- 0
   
   mu_CB   ~ dnorm(0, .0001)

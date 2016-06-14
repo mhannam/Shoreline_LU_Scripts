@@ -16,7 +16,7 @@ my.inits = list(list('sig_SE' = 1.7, 'sig_RS' = .36, 'sig_St'= 2.7,
 #Model Data Prep -------------------------------
 
 #Sample the data
-SAV_Sh.samp = SAV_Sh1 %>% group_by(SubEst) %>% sample_frac(.1)#sample_n(50)
+SAV_Sh.samp = SAV_Sh1 %>% group_by(SubEst) %>% sample_frac(.2)#sample_n(50)
 SAV_Sh.samp$SubEst = factor(SAV_Sh.samp$SubEst)
 
 #Create a Subest Summary Table
@@ -33,7 +33,7 @@ mod.dat.samp =
        list(
          NSites = length(SAV),
          SAV    = SAV/10000,
-         Hab    = Hab,
+         Hab    = Hab/10000,
          NSubEst = length(levels(SubEst)),
          SubEst  = as.numeric(SubEst),
          NRivSys = length(levels(HUC_8)),
@@ -55,7 +55,7 @@ mod.dat.samp.ztrunc =
        list(
          NSites = length(sav98_13m2),
          SAV    = sav98_13m2/10000,
-         Hab    = pothabm2,
+         Hab    = pothabm2/10000,
          NSubEst = length(levels(SubEst)),
          SubEst  = as.numeric(SubEst),
          NRivSys = length(levels(HUC_8)),
@@ -73,11 +73,12 @@ mod.dat.samp.ztrunc$SubRR     = Subest.Samp$SubRR
 
 
 my.pars = c('sig_RS', 'sig_SE', 'sig_St', 'B_Sal', 'mu_CB', 'sig_Sal', 
-            'B_BH', 'B_RR','B_SubBH', 'B_SubRR', 'Prop_RS')
+            'B_BH', 'B_RR','B_BH_Sal','B_RR_Sal','B_SubBH', 'B_SubRR', 'Prop_RS',
+            'sd_newProp_RS','var_newProp_RS','sd_newProp_SE')
 VarComp.mod = ('gamma_Jags1.R')
 VarComp.mod = ('gamma_Jags_armor.R')
 VarComp = run.jags(VarComp.mod, data = mod.dat.samp.ztrunc,
-                   monitor = my.pars, n.chains = 3, burnin = 1000, sample = 1000,
+                   monitor = my.pars, n.chains = 3, burnin = 10000, sample = 5000,
                    thin=1,modules = 'glm on',inits = my.inits,
                    method = 'rjparallel')#, mutate = list('sd', vars = "B_Sal[]"))
 VarComp
