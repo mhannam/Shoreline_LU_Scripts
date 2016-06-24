@@ -7,13 +7,12 @@ data{
 }
 model{
   #for the ones trick:
-    c <- 10000
-    
+  c <- 1000
+  
   for (i in 1:NSites) {
     # Presence
     #w[i] <- w_1[i]#min(max(.1,w_1[i]),.9)
-    w[i] <- ilogit(alpha_PA + mu_SE_PA[SubEst[i]] + B_BH_PA * BH[i] + B_RR_PA * RR[i])# +
-                     #B_BH_Sal_PA[Sal[i]]*BH[i] + B_RR_Sal_PA[Sal[i]]*RR[i])
+    w[i] <- ilogit(alpha_PA + mu_SE_PA[SubEst[i]])
     
     # Abundance
     logGamma[i]    <- log(dgamma(SAV[i], lambdaObs[i], rObs[i]))
@@ -23,8 +22,7 @@ model{
     
     SAV_hat[i] <- Prop[i]*Hab[i] 
     #Prop_adj[i] <- Prop[i]# min(max(.1,Prop[i]), .9)
-    Prop[i] <- ilogit(alpha + mu_SE[SubEst[i]] + B_BH * BH[i] + B_RR * RR[i]) #+
-                        #B_BH_Sal[Sal[i]]*BH[i] + B_RR_Sal[Sal[i]]*RR[i])
+    Prop[i] <- ilogit(alpha + mu_SE[SubEst[i]])
     
     # define the total likelihood, where the likelihood is (1 - w) if y = 0 (z = 0) or
     # the likelihood is w * gammalik if y >= 0.0001 (z = 1). So if z = 1, then the first bit must be
@@ -38,33 +36,38 @@ model{
     # this scaling doesn't affect the outcome b/c MCMC works on the relative scale
     # The likelihood of a 1 drawn from a bernoulli dist with p, is p
     p[i]    <- Lik[i] / c 
-    #p_adj[i] <- min(max(.00001,p[i]), .99999)
+    #p_adj[i] <- min(max(.0000001,p[i]), .9999999)
     ones[i] ~ dbern(p[i])
   }
-  maxp = max(p[])
-  minp = min(p[])
-    
+  #  maxp = max(p[])
+  #  minp = min(p[])
+  #  minLik = min(Lik[])
+  #  maxLik = max(Lik[])
+  #  maxw = max(w[])
+  #  minw = min(w[])
+  # maxG = max(logGamma[])
+  # minG = min(logGamma[])
+  # minSAV = min(SAV_hat[])
+  
   for (j in 1:NSubEst) {
     #Prop_SE ~ dbeta(Prop_RS[RivSys[j]])
     Prop_SE[j] <- ilogit(mu_SE[j]) # a derived proportion for
     mu_SE[j]    ~ dnorm(yhat_SE[j], tau_SE)
-    yhat_SE[j] <-  B_Sal[SubSal[j]] #+ # mu_RS[SubRivSys[j]]
-    #B_SubBH * SubBH[j] + B_SubRR * SubRR[j]# + Landcover + PctArmor 
+    yhat_SE[j] <-  mu_RS[SubRivSys[j]] + B_Sal[SubSal[j]]
     
     mu_SE_PA[j] ~ dnorm(yhat_SE_PA[j], tau_SE_PA)
-    yhat_SE_PA[j] <-  B_Sal_PA[SubSal[j]]# + #mu_RS_PA[SubRivSys[j]] +
-     # B_SubBH_PA * SubBH[j] + B_SubRR_PA * SubRR[j]# + Landcover + PctArmor 
+    yhat_SE_PA[j] <- mu_RS_PA[SubRivSys[j]] + B_Sal_PA[SubSal[j]]
   }
   
-  # for (k in 1:NRivSys) {
-  #   #Prop_RS[k] ~ dbeta(Prop)
-  #   Prop_RS[k] <- ilogit(mu_RS[k])
-  #   mu_RS[k]    ~ dnorm(yhat_RS[k], tau_RS) # <- yhat_RS[k] #
-  #   yhat_RS[k] <- mu_CB # + landcover?
-  # 
-  #   mu_RS_PA[k]    ~ dnorm(yhat_RS_PA[k], tau_RS_PA)
-  #   yhat_RS_PA[k] <- mu_CB_PA
-  # }
+  for (k in 1:NRivSys) {
+    #Prop_RS[k] ~ dbeta(Prop)
+    Prop_RS[k] <- ilogit(mu_RS[k])
+    mu_RS[k]    ~ dnorm(0, tau_RS) # <- yhat_RS[k] #
+    #yhat_RS[k] <- mu_CB # + landcover?
+
+    mu_RS_PA[k]    ~ dnorm(0, tau_RS_PA)
+    #yhat_RS_PA[k] <- mu_CB_PA
+  }
   
   
   alpha ~ dnorm(0, .001)
@@ -82,18 +85,9 @@ model{
   tau_SE_PA <- sig_SE_PA^-2
   sig_SE_PA  ~ dunif(0,100)
   
-  B_BH ~ dnorm(0, .001)
-  B_RR ~ dnorm(0, .001)
-  B_SubBH ~ dnorm(0, .001)
-  B_SubRR ~ dnorm(0, .001)
-  
-  B_BH_PA ~ dnorm(0, .001)
-  B_RR_PA ~ dnorm(0, .001)
-  B_SubBH_PA ~ dnorm(0, .001)
-  B_SubRR_PA ~ dnorm(0, .001)
-  
   for(i in 2:NSal){
     B_Sal[i]  ~ dnorm(0, .001)
+    #B_Sal[i] <- B_Sal_raw[i]-mean(B_Sal_raw[])
     B_BH_Sal[i] ~ dnorm(0, .001)
     B_RR_Sal[i] ~ dnorm(0, .001)
     
@@ -102,15 +96,41 @@ model{
     B_RR_Sal_PA[i] ~ dnorm(0, .001)
   }
   
-  B_Sal[1] <- 0#-mean(B_Sal[2:NSal]) 
+  B_Sal[1] <- 0#-sum(B_Sal[2:NSal]) 
   B_BH_Sal[1] <- 0#-mean(B_BH_Sal[2:NSal]) 
   B_RR_Sal[1] <- 0#-mean(B_RR_Sal[2:NSal]) 
   #B_Sal[1] <- 0
   
-  B_Sal_PA[1] <- 0#-mean(B_Sal_PA[2:NSal]) 
+  B_Sal_PA[1] <- 0#-sum(B_Sal_PA[2:NSal]) 
   B_BH_Sal_PA[1] <- 0#-mean(B_BH_Sal[2:NSal]) 
   B_RR_Sal_PA[1] <- 0#-mean(B_RR_Sal[2:NSal]) 
   
-  mu_CB   ~ dnorm(0, .001)
-  mu_CB_PA ~ dnorm(0, .001)
+  # mu_CB   ~ dnorm(0, .001)
+  # mu_CB_PA ~ dnorm(0, .001)
+  
+  #Derived quantities  
+  # to get variance components on the prediction scale
+  for (n in 1:100){
+    newmu_RS[n]    ~ dnorm(0, tau_RS)
+    newProp_RS[n] <- ilogit(newmu_RS[n])
+    newmu_SE[n]    ~ dnorm(0, tau_SE)
+    newProp_SE[n] <- ilogit(newmu_SE[n])
+    
+    newmu_RS_PA[n]    ~ dnorm(0, tau_RS_PA)
+    newProp_RS_PA[n] <- ilogit(newmu_RS[n])
+    newmu_SE_PA[n]    ~ dnorm(0, tau_SE_PA)
+    newProp_SE_PA[n] <- ilogit(newmu_SE[n])
+  }
+  
+  sd_newProp_RS  <- sd(newProp_RS[])
+  var_newProp_RS <- sd_newProp_RS^2
+  sd_newProp_SE  <- sd(newProp_SE[])
+  var_newProp_SE <- sd_newProp_SE^2
+  sd_Sal    <- sd(B_Sal[])
+  
+  sd_newProp_RS_PA  <- sd(newProp_RS_PA[])
+  var_newProp_RS_PA <- sd_newProp_RS_PA^2
+  sd_newProp_SE_PA  <- sd(newProp_SE_PA[])
+  var_newProp_SE_PA <- sd_newProp_SE_PA^2
+  sd_Sal_PA <- sd(B_Sal_PA[])
 }

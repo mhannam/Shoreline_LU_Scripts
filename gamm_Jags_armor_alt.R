@@ -1,6 +1,7 @@
 # We model SAV area as a gamma dist variable, composed of the product of the potential habitat
 # and the expected proportion occupied. We model that proportion with a logit-linked linear model
 #
+# TESTING LOCATION OF HIERARCHICAL predictors, Here they are ALL included in lowest level model
 
 model{
   for (i in 1:NSites) {
@@ -8,21 +9,21 @@ model{
     
     lambdaObs[i]   <- SAV_hat[i]^2 / var_y_hat    
     rObs[i]        <- SAV_hat[i] / var_y_hat
-
+    
     
     SAV_hat[i] <- Prop[i]*Hab[i] # or exp(mu[SubEst[i]])*Hab[i] # or ilogit(mu[SubEst[i]])*Hab[i]
     #Prop[i]    <- Prop_SE[SubEst[i]]
     #Prop[i] <- ilogit(Subest + RivSys)
     Prop[i] <- ilogit(mu_SE[SubEst[i]] + B_BH * BH[i] + B_RR * RR[i]+
-                        B_BH_Sal[Sal[i]]*BH[i] + B_RR_Sal[Sal[i]]*RR[i])
+                        B_BH_Sal[Sal[i]]*BH[i] + B_RR_Sal[Sal[i]]*RR[i]+
+      B_Sal[Sal[i]])
   }
   
   for (j in 1:NSubEst) {
     #Prop_SE ~ dbeta(Prop_RS[RivSys[j]])
     Prop_SE[j] <- ilogit(mu_SE[j]) # a derived proportion for
     mu_SE[j]    ~ dnorm(yhat_SE[j], tau_SE)
-    yhat_SE[j] <- mu_RS[SubRivSys[j]] + B_Sal[SubSal[j]]# + 
-      #B_SubBH * SubBH[j] + B_SubRR * SubRR[j]# + Landcover + PctArmor 
+    yhat_SE[j] <- mu_RS[SubRivSys[j]]
   }
   
   for (k in 1:NRivSys) {
@@ -32,8 +33,8 @@ model{
     yhat_RS[k] <- mu_CB # + landcover?
   }
   
-  var_y_hat <- sig_St^2
-  sig_St    ~ dunif(0,100)
+  var_y_hat <- sig_St^-2
+  sig_St    ~ dunif(0,10000)
   tau_RS <- sig_RS^-2
   sig_RS  ~ dunif(0,100)
   tau_SE <- sig_SE^-2

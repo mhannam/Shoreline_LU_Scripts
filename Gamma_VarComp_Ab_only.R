@@ -57,7 +57,7 @@ model{
     #B_Sal[i] <- B_Sal_raw[i]-mean(B_Sal_raw[2:4])
     #B_Sal[i] ~ dnorm(0, tau_Sal)
   }
-  B_Sal[1] <- -mean(B_Sal[2:NSal]) #0
+  B_Sal[1] <- -sum(B_Sal[2:NSal]) #0
   
   mu_CB     ~ dnorm(0, .0001)
   mu_Sal    ~ dnorm(0,.0001)
