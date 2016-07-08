@@ -13,38 +13,57 @@ library(dplyr)
 # SubEstHucFile =  "/Users/mikehannam/Dropbox (Smithsonian)/SERC/SAV/Data/SubEst_Huc.txt"
 
 # Files on PC -----------------------------
-VA_SAV_StrFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\VAeucasstru_spJ_SummarizeWit_sav98_13.csv"
+Chris_File     = "L:/Hannam/SAV/Shoreline_LU/sstru_Grouped_50_125_250mBuf_lubc_SubEst.txt"
+
+VA_SAV_StrFile = "L:/Williams/GIS/ForMike/OLD_DELETE/VAeucasstru_spJ_SummarizeWit_sav98_13.csv"
 VA_Sh_LUFile   = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\VAlubcFEATURE2.csv"
 
-MD_SAV_StrFile = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\MDeucasstru_spJ_SummarizeWit_sav98_13.csv"
+MD_SAV_StrFile = "L:\\Williams\\GIS\\ForMike\\OLD_DELETE\\MDeucasstru_spJ_SummarizeWit_sav98_13.csv"
 MD_Sh_LUFile   = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\MDlubcFEATURE2.csv"
 
 SubEstFile     = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Subest_Metrics.csv"
 SubEstHucFile  = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\SubEst_Huc.txt"
 SubEstSAVFile  = "L:\\Hannam\\SAV\\Data\\NOAA_CSCOR\\SubEstSAV_Abundance_Summary_FINAL.csv"
 
-VA_SAV_250file = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\eucasstruVA_b9813sub250_lte250.csv"
-VA_SAV_500file = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\eucasstruVA_b9813sub250p_250to500m.csv"
+#VA_SAV_250file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\OLD_DELETE\\eucasstruVA_b9813sub250va_lte250.csv"
+VA_SAV_500file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstruvaJ_beds9813_1m.txt"
+VA_SAV_250file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS2_eucasstruvaJ_va1m_sav250.txt"
+VA_PtHab_250file   = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstruvaJ_va1m_pot250.txt"
 
-MD_SAV_250file = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\eucasstruMD_b9813sub250_lte250.csv"
-MD_SAV_500file = "L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Special_Issue_Data\\eucasstruMD_b9813sub250p_250to500m.csv"
+#MD_SAV_250file = 
+MD_SAV_500file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstrumdJ_beds9813_1m.txt"
+MD_SAV_250file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstrumdJ_md1m_beds250.txt"
+MD_PtHab_250file =   "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstrumdJ_md1m_pot250.txt"
+
+#Load Chris's data -----------------------------------------------------------
+CP_SAV <- read.csv(Chris_File)
+CP_SAV2 <- filter(CP_SAV, GROUPED %in% c('Bulkhead', 'Natural','Riprap'), 
+                  PTHAB_AREA > 0,
+                  #SUBEST_ID !='', 
+                  SALINITY %in% c('MH', 'PH', 'OH'))
+CP_SAV2$OccHab = with(CP_SAV2, SAV_AREA/max(PTHAB_AREA,SAV_AREA))
+CP_SAV2$GROUPED = factor(CP_SAV2$GROUPED, levels(CP_SAV2$GROUPED)[c(6,7,2)])
 
 #Load and Prep Maryland Data ------------------------------------------------- 
 MD_SAV_Str <- read.csv(MD_SAV_StrFile)
 MD_Sh_LU   <- read.csv(MD_Sh_LUFile)
 MD_SAV_250 <- read.csv(MD_SAV_250file)
 MD_SAV_500 <- read.csv(MD_SAV_500file)
+MD_Pot_250 <- read.csv(MD_PtHab_250file)
 
-#Join files for SAV within 250m and SAV from 250-500m
-MD_SAV = full_join(
+#Join files for SAV within 250m and within 500m
+MD_SAV0 = full_join(
   select(MD_SAV_500, SAV_500=VALUE_1, sstruID = SSTRUID),
   select(MD_SAV_250, SAV_250=VALUE_1, sstruID = SSTRUID),
   'sstruID')
+MD_SAV = full_join(MD_SAV0,
+  select(MD_Pot_250, Pot_250=VALUE_1, sstruID = SSTRUID))
 
 #Join those to the SAV_Str file
-MD_SAV_Str1 <- left_join(MD_SAV_Str, VA_SAV, 'sstruID')
-MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_500), 'SAV_500']=0
-MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_250), 'SAV_250']=0
+MD_SAV_Str1 <- left_join(MD_SAV_Str, MD_SAV, 'sstruID')
+MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_500), 'SAV_500'] = 0
+MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_250), 'SAV_250'] = 0
+MD_SAV_Str1[is.na(MD_SAV_Str1$Pot_250), 'Pot_250'] = 0
 
 New_MD_Levels = c("Agriculture", "Bare", "Blank", "Comm_Ind_Other", "Marsh", "Forest", "Grass", "Comm_Ind_Other",
                   "Comm_Ind_Other","Comm_Ind_Other", "Residential", "Scrub_Shrub", "Forest")
@@ -68,7 +87,7 @@ MD_SAV_Sh = left_join(MD_SAV_Str1, MD_Sh_LU_Wide, by = "Join_ID") %>%
   select(Structure = STRUCTURE, County = county, sav89_13m2, sav98_13m2, pothabm2, savPCTphab, 
          SubEst = SUBESTID, Length_m,
          Perc_Ag:Perc_ScrubSh,
-         SAV_250, SAV_500)
+         SAV_250, SAV_500, Pot_250)
 
 
 #Load and Prep Virginia Data ------------------------------------------------- 
@@ -76,18 +95,21 @@ VA_SAV_Str <- read.csv(VA_SAV_StrFile)
 VA_Sh_LU   <- read.csv(VA_Sh_LUFile)
 VA_SAV_250 <- read.csv(VA_SAV_250file)
 VA_SAV_500 <- read.csv(VA_SAV_500file)
+VA_Pot_250 <- read.csv(VA_PtHab_250file)
 
 #Join files for SAV within 250m and SAV from 250-500m
-VA_SAV = full_join(
+VA_SAV0 = full_join(
   select(VA_SAV_500, SAV_500=VALUE_1, sstruID = SSTRUID),
   select(VA_SAV_250, SAV_250=VALUE_1, sstruID = SSTRUID),
   'sstruID')
-
+VA_SAV = full_join(VA_SAV0,
+                   select(VA_Pot_250, Pot_250 = VALUE_1,sstruID=SSTRUID))
 
 #Join those to the SAV_Str file
 VA_SAV_Str1 <- left_join(VA_SAV_Str, VA_SAV, 'sstruID')
 VA_SAV_Str1[is.na(VA_SAV_Str1$SAV_500), 'SAV_500']=0
 VA_SAV_Str1[is.na(VA_SAV_Str1$SAV_250), 'SAV_250']=0
+VA_SAV_Str1[is.na(VA_SAV_Str1$Pot_250), 'Pot_250']=0
 #Reclassify
 # (Forest, forested, timbered) -> Forest
 # (Commercial, Military, Industrial, Paved) -> Comm_Ind_Other
@@ -101,20 +123,20 @@ levels(VA_Sh_LU$feature2)
 
 VA_Sh_LU_Wide = spread(VA_Sh_LU, key = feature2, value = PercentLength, fill = 0) %>%
   group_by(Join_ID) %>%
-  summarise(Length_m = sum(SUM_Length_METERS),
-            Perc_Ag = sum(Agriculture),
+  summarise(Length_m      = sum(SUM_Length_METERS),
+            Perc_Ag       = sum(Agriculture),
             Perc_Comm_Ind = sum(Comm_Ind_Other),
-            Perc_Marsh = sum(Marsh),
-            Perc_Res = sum(Residential),
-            Perc_Forest = sum(Forest),
-            Perc_Grass = sum(Grass), 
-            Perc_ScrubSh = sum(Scrub_Shrub)
+            Perc_Marsh    = sum(Marsh),
+            Perc_Res      = sum(Residential),
+            Perc_Forest   = sum(Forest),
+            Perc_Grass    = sum(Grass), 
+            Perc_ScrubSh  = sum(Scrub_Shrub)
   )
     #This step creates 257 NAs in Length_m, presumably the whole LU file has NAs here
 VA_SAV_Sh = left_join(VA_SAV_Str1, VA_Sh_LU_Wide, by= "Join_ID" ) %>%
   select(Structure = STRUCTURE, County = COUNTY, sav89_13m2, sav98_13m2, pothabm2, 
          savPCTphab, SubEst = SUBESTID, Length_m, Perc_Ag:Perc_ScrubSh,
-         SAV_250, SAV_500)
+         SAV_250, SAV_500, Pot_250)
 
 
 
@@ -122,20 +144,28 @@ summary(VA_SAV_Sh)
 summary(MD_SAV_Sh)
 
 #Combine----------------------------------------
-SAV_Sh = rbind(VA_SAV_Sh, MD_SAV_Sh)
+SAV_Sh0 = rbind(VA_SAV_Sh, MD_SAV_Sh)
+
+#TO ANALYZE ONLY MD DATA: ################-------------------------------
+#SAV_Sh0 = MD_SAV_Sh
 
 #GIS gave NA to 0 SAV segments, add fields where these are 0, but keep NAs:
-SAV_Sh = SAV_Sh %>% mutate(SAV = sav89_13m2, Hab = pothabm2, OccHab = savPCTphab)
+SAV_Sh0 = SAV_Sh0 %>% mutate(Hab_500 = pothabm2, 
+                            OccHab500 = SAV_500/Hab_500,
+                            SAV = SAV_250,
+                            OccHab250 = SAV_250/Pot_250)#savPCTphab)
 
-SAV_Sh[is.na(SAV_Sh$SAV),c('SAV')] = 0.00001 #This stands in for zero, but is filtered out by the model
-SAV_Sh[is.na(SAV_Sh$Hab),'Hab'] = 0
-SAV_Sh[is.na(SAV_Sh$OccHab),'OccHab'] = 0
+SAV_Sh0[is.na(SAV_Sh0$SAV),c('SAV')] = 0.00001 #This stands in for zero, but is filtered out by the model
+SAV_Sh0[is.na(SAV_Sh0$Hab_500),'Hab_500'] = 0
+SAV_Sh0[is.na(SAV_Sh0$Pot_250),'Pot_250'] = 0
+SAV_Sh0[is.na(SAV_Sh0$OccHab500),'OccHab500'] = 0
+SAV_Sh0[is.na(SAV_Sh0$OccHab250),'OccHab250'] = 0
 
 #Reclass SStru-----------------------------------------------
 New.Struc = c('Bulkhead', 'Other','Other','Marina','Marina','Marina','Wharf',
               'Other','Natural','Riprap','Other', 'Wharf','Other')
-levels(SAV_Sh$Structure) = New.Struc
-SAV_Sh$Structure = factor(SAV_Sh$Structure)
+levels(SAV_Sh0$Structure) = New.Struc
+SAV_Sh0$Structure = factor(SAV_Sh0$Structure)
 
 #Add subestuary metrics--------------------------------------------------------------------
 SubEst = read.csv(SubEstFile, skip = 1)
@@ -155,7 +185,7 @@ SubEst %>% select(SubEst = CODE, NAME, BIGNAME, SALINZONE, LANDCAT,
 SubEst_Sel = left_join(SubEst_Sel, SubEstHuc_Sel )
 
 #Join SubEst to SAV
-SAV_Sh = left_join(SAV_Sh, SubEst_Sel)#, by = c("SubEst"="CODE"))
+SAV_Sh = left_join(SAV_Sh0, SubEst_Sel)#, by = c("SubEst"="CODE"))
 SAV_Sh$SubEst = factor(SAV_Sh$SubEst)
 
 #Drop NA subestuary records
@@ -168,18 +198,29 @@ SAV_Sh = mutate(SAV_Sh,
                 HUC_4 = factor(substr(HUC_8,1,4)))
 SAV_Sh$HUC_8 = factor(SAV_Sh$HUC_8)
 
+# Expand potential habitat to include all sav area
+# SAV_Sh$Pot_250a = ifelse(SAV_Sh$Pot_250>SAV_Sh$SAV_250, 
+#                          SAV_Sh$Pot_250, SAV_Sh$SAV_250)
+
 ### Filter Dataset -----------------------------------------
 #Examine shoreline segment length, and select a reasonable subset of lengths--------------
 hist(log(SAV_Sh$Length_m))
 
 quantile(SAV_Sh$Length_m, na.rm=TRUE, probs = seq(0,1,.1))
+quantile(SAV_Sh$Length_m, na.rm=TRUE, probs = seq(0,1,.25))
 
 #SAV_Sh1 = filter(SAV_Sh, Length_m < 450, Length_m > 25)
-SAV_Sh1 = filter(SAV_Sh, Length_m < 125, Length_m > 75) #Range used by Patrick et al
+#SAV_Sh1 = filter(SAV_Sh, Length_m < 125, Length_m > 75) #Range used by Patrick et al
 
 SAV_Sh1 = filter(SAV_Sh, Structure %in% c('Bulkhead', 'Riprap','Natural'),
-                 Length_m < 125, Length_m > 75)
-SAV_Sh1$Structure = factor(SAV_Sh1$Structure)
+                 Length_m < 125, Length_m > 75, Pot_250>0,
+                 SALINZONE %in% c('OH', 'MH', 'PH'))#,
+                 #!is.na(Pot_250a))
+SAV_Sh1$Structure = factor(SAV_Sh1$Structure, levels(SAV_Sh1$Structure)[c(5,6,1)])
+SAV_Sh1$SALINZONE = factor(SAV_Sh1$SALINZONE)
 
-plot(I(SAV_250)~SAV, data = SAV_Sh1)
-plot(I(SAV_250+SAV_500)~SAV, data = SAV_Sh1)
+plot(SAV_250~Pot_250, data = SAV_Sh1)
+plot(SAV_250~SAV_500, data = SAV_Sh1)
+plot(SAV_500~Hab_500, data = SAV_Sh1)
+#SAV_Sh1[SAV_Sh1$SAV_250==max(SAV_Sh1$SAV_250),]
+

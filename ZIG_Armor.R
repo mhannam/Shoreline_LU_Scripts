@@ -12,8 +12,9 @@ model{
   for (i in 1:NSites) {
     # Presence
     #w[i] <- w_1[i]#min(max(.1,w_1[i]),.9)
-    w[i] <- ilogit(alpha_PA + mu_SE_PA[SubEst[i]] + B_BH_PA * BH[i] + B_RR_PA * RR[i])# +
-                     #B_BH_Sal_PA[Sal[i]]*BH[i] + B_RR_Sal_PA[Sal[i]]*RR[i])
+    w[i] <- ilogit(alpha_PA + mu_SE_PA[SubEst[i]] + B_BH_PA * BH[i] + B_RR_PA * RR[i] +
+                     B_BH_Sal_PA[Sal[i]]*BH[i] + B_RR_Sal_PA[Sal[i]]*RR[i])
+  
     
     # Abundance
     logGamma[i]    <- log(dgamma(SAV[i], lambdaObs[i], rObs[i]))
@@ -23,8 +24,8 @@ model{
     
     SAV_hat[i] <- Prop[i]*Hab[i] 
     #Prop_adj[i] <- Prop[i]# min(max(.1,Prop[i]), .9)
-    Prop[i] <- ilogit(alpha + mu_SE[SubEst[i]] + B_BH * BH[i] + B_RR * RR[i]) #+
-                        #B_BH_Sal[Sal[i]]*BH[i] + B_RR_Sal[Sal[i]]*RR[i])
+    Prop[i] <- ilogit(alpha + mu_SE[SubEst[i]] + B_BH * BH[i] + B_RR * RR[i] +
+                        B_BH_Sal[Sal[i]]*BH[i] + B_RR_Sal[Sal[i]]*RR[i])
     
     # define the total likelihood, where the likelihood is (1 - w) if y = 0 (z = 0) or
     # the likelihood is w * gammalik if y >= 0.0001 (z = 1). So if z = 1, then the first bit must be
@@ -41,8 +42,8 @@ model{
     #p_adj[i] <- min(max(.00001,p[i]), .99999)
     ones[i] ~ dbern(p[i])
   }
-  maxp = max(p[])
-  minp = min(p[])
+  #maxp = max(p[])
+  #minp = min(p[])
     
   for (j in 1:NSubEst) {
     #Prop_SE ~ dbeta(Prop_RS[RivSys[j]])
@@ -93,24 +94,42 @@ model{
   B_SubRR_PA ~ dnorm(0, .001)
   
   for(i in 2:NSal){
-    B_Sal[i]  ~ dnorm(0, .001)
     B_BH_Sal[i] ~ dnorm(0, .001)
     B_RR_Sal[i] ~ dnorm(0, .001)
     
-    B_Sal_PA[i]  ~ dnorm(0, .001)
     B_BH_Sal_PA[i] ~ dnorm(0, .001)
     B_RR_Sal_PA[i] ~ dnorm(0, .001)
   }
   
-  B_Sal[1] <- 0#-mean(B_Sal[2:NSal]) 
+  for (i in 1:NSal){
+    B_Sal_raw[i]  ~ dnorm(0, .001)
+    B_Sal[i] <- B_Sal_raw[i]-mean(B_Sal_raw[])
+    B_Sal_PA_raw[i]  ~ dnorm(0, .001)
+    B_Sal_PA[i] <- B_Sal_PA_raw[i]-mean(B_Sal_PA_raw[])
+  }
+  
+  #B_Sal[1] <- 0#-mean(B_Sal[2:NSal]) 
   B_BH_Sal[1] <- 0#-mean(B_BH_Sal[2:NSal]) 
   B_RR_Sal[1] <- 0#-mean(B_RR_Sal[2:NSal]) 
   #B_Sal[1] <- 0
   
-  B_Sal_PA[1] <- 0#-mean(B_Sal_PA[2:NSal]) 
+  #B_Sal_PA[1] <- 0#-mean(B_Sal_PA[2:NSal]) 
   B_BH_Sal_PA[1] <- 0#-mean(B_BH_Sal[2:NSal]) 
   B_RR_Sal_PA[1] <- 0#-mean(B_RR_Sal[2:NSal]) 
   
   mu_CB   ~ dnorm(0, .001)
   mu_CB_PA ~ dnorm(0, .001)
+  
+  
+  #Derived Quantities:
+  
+  BH_MH <- B_BH + B_BH_Sal[1]
+  BH_OH <- B_BH + B_BH_Sal[2]
+  BH_PH <- B_BH + B_BH_Sal[3]
+  #BH_TF <- Beta_BH + Beta_BS[4]
+  
+  RR_MH <- B_RR + B_RR_Sal[1]
+  RR_OH <- B_RR + B_RR_Sal[2]
+  RR_PH <- B_RR + B_RR_Sal[3]
+  #RR_TF <- Beta_RR + Beta_RS[4]
 }
