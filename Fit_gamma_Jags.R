@@ -4,8 +4,8 @@ library(dplyr)
 library(lme4)
 
 varcomp.lmer = lmer(SAV/10000~SALINZONE+(1|HUC_8/SubEst), data = SAV_Sh.samp)
-armor.lmer = lmer(OccHab500~SALINZONE*Structure + (1|SubEst), 
-                   data = SAV_Sh1)#, family = poisson(link='log'))
+armor.lmer = lmer(OccHab250~SALINZONE*Structure + (1|SubEst), 
+                   data = SAV_Sh.samp)#, family = poisson(link='log'))
 
 my.inits = list(list('sig_SE' = 1.7, 'sig_RS' = .36, 'sig_St'= 2.7,
                      'B_Sal[1]'= .35, 'B_Sal[2]' = 1.2, 'B_Sal[3]' = .86,'B_Sal[4]' = 5.3),
@@ -18,8 +18,8 @@ my.inits = list(list('sig_SE' = 1.7, 'sig_RS' = .36, 'sig_St'= 2.7,
 #Model Data Prep -------------------------------
 
 #Sample the data
-SAV_Sh.samp = SAV_Sh1 %>% group_by(SubEst) %>% sample_frac(.5) %>%
-  filter(Hab>0) #sample_n(50) 
+SAV_Sh.samp = SAV_Sh1 %>% group_by(SubEst) %>% sample_frac(.5) #%>%
+  #filter(Hab>0) #sample_n(50) 
 SAV_Sh.samp$SubEst = factor(SAV_Sh.samp$SubEst)
 
 #SAV_Sh.samp = filter(SAV_Sh.samp, Hab>0)
@@ -51,7 +51,8 @@ mod.dat.samp =
          Sal    = as.numeric(SALINZONE),
          Str    = as.numeric(Structure),
          BH     = as.numeric(Structure=="Bulkhead"),
-         RR     = as.numeric(Structure=="Riprap")
+         RR     = as.numeric(Structure=="Riprap"),
+         Perc_Marsh = Perc_Marsh
 ))
 
 mod.dat.samp$SubRivSys = as.numeric(Subest.Samp$HUC_8)
@@ -77,7 +78,8 @@ mod.dat.samp.ztrunc =
          Sal    = as.numeric(SALINZONE),
          Str    = as.numeric(Structure),
          BH     = as.numeric(Structure=="Bulkhead"),
-         RR     = as.numeric(Structure=="Riprap")
+         RR     = as.numeric(Structure=="Riprap"),
+         Perc_Marsh = Perc_Marsh
        ))
 mod.dat.samp.ztrunc$SubRivSys = as.numeric(Subest.Samp$HUC_8)
 mod.dat.samp.ztrunc$SubSal    = as.numeric(Subest.Samp$Sal)
@@ -143,7 +145,7 @@ my.pars = c('sig_RS', 'sig_SE', 'sig_St','sig_RS_PA', 'sig_SE_PA', 'sig_St_PA',
             'B_BH', 'B_RR','B_BH_Sal','B_RR_Sal','B_SubBH', 'B_SubRR', 'Prop_RS',
             'B_BH_PA', 'B_RR_PA', 'B_BH_Sal_PA', 'B_RR_Sal_PA', 'B_Sub_BH_PA', 'B_SubRR_PA', 
             'sd_newProp_RS','var_newProp_RS','sd_newProp_SE', 'sd_Sal',
-            'sd_Sal_PA','DIC')#,'minLik','maxp','maxLik','minp',
+            'sd_Sal_PA','B_Mar', 'B_Mar_PA')#,'minLik','maxp','maxLik','minp',
 #'maxG', 'minG', 'minw', 'maxw')
 ZIG.mod = 'ZIG_Armor.R'
 #ZIGVC.mod = 'ZIG_Varcomp.R'
@@ -168,10 +170,12 @@ my.inits.old = list(list('mu_CB' = 1, 'mu_CB_PA'=1,
 )
 
 ZIGOld = run.jags(ZIG.mod, data = old.dat.samp, inits = my.inits.old,
-                  monitor = my.pars, n.chains = 3, burnin = 2000, sample = 1000,
+                  monitor = my.pars, n.chains = 3, burnin = 1000, sample = 1000,
                   thin = 1, modules = 'glm on',
                   method = 'rjparallel')
 
 ZILN.mod = 'ZILN_Armor.R'
 ZILN = run.jags(ZILN.mod, data = mod.dat.samp, inits = my.inits, monitor = my.pars, n.chains = 3,
+                burnin = 1000, sample = 1000, modules = 'glm on', method = 'rjparallel')
+ZILN.old = run.jags(ZILN.mod, data = old.dat.samp, inits = my.inits, monitor = my.pars, n.chains = 3,
                 burnin = 1000, sample = 1000, modules = 'glm on', method = 'rjparallel')

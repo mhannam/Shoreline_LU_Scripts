@@ -39,10 +39,11 @@ MD_PtHab_250file =   "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge98
 CP_SAV <- read.csv(Chris_File)
 CP_SAV2 <- filter(CP_SAV, GROUPED %in% c('Bulkhead', 'Natural','Riprap'), 
                   PTHAB_AREA > 0,
+                  struGlngth>.075,
                   #SUBEST_ID !='', 
                   SALINITY %in% c('MH', 'PH', 'OH'))
-CP_SAV2$OccHab = with(CP_SAV2, SAV_AREA/max(PTHAB_AREA,SAV_AREA))
-CP_SAV2$GROUPED = factor(CP_SAV2$GROUPED, levels(CP_SAV2$GROUPED)[c(6,7,2)])
+CP_SAV2$OccHab = with(CP_SAV2, SAV_AREA/max(PTHAB_AREA,SAV_AREA)) # create occ hab and deal with SAV > Occhab
+CP_SAV2$GROUPED = factor(CP_SAV2$GROUPED, levels(CP_SAV2$GROUPED)[c(6,7,2)]) # reorder factor levels
 
 #Load and Prep Maryland Data ------------------------------------------------- 
 MD_SAV_Str <- read.csv(MD_SAV_StrFile)
@@ -53,21 +54,20 @@ MD_Pot_250 <- read.csv(MD_PtHab_250file)
 
 #Join files for SAV within 250m and within 500m
 MD_SAV0 = full_join(
-  select(MD_SAV_500, SAV_500=VALUE_1, sstruID = SSTRUID),
-  select(MD_SAV_250, SAV_250=VALUE_1, sstruID = SSTRUID),
+  select(MD_SAV_500, SAV_500 = VALUE_1, sstruID = SSTRUID),
+  select(MD_SAV_250, SAV_250 = VALUE_1, sstruID = SSTRUID),
   'sstruID')
 MD_SAV = full_join(MD_SAV0,
-  select(MD_Pot_250, Pot_250=VALUE_1, sstruID = SSTRUID))
+  select(MD_Pot_250, Hab_250 = VALUE_1, sstruID = SSTRUID))
 
 #Join those to the SAV_Str file
-MD_SAV_Str1 <- left_join(MD_SAV_Str, MD_SAV, 'sstruID')
-MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_500), 'SAV_500'] = 0
-MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_250), 'SAV_250'] = 0
-MD_SAV_Str1[is.na(MD_SAV_Str1$Pot_250), 'Pot_250'] = 0
+MD_SAV_Str1 <- left_join(MD_SAV, MD_SAV_Str, 'sstruID')
+#MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_500), 'SAV_500'] = 0
+#MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_250), 'SAV_250'] = 0
 
 New_MD_Levels = c("Agriculture", "Bare", "Blank", "Comm_Ind_Other", "Marsh", "Forest", "Grass", "Comm_Ind_Other",
                   "Comm_Ind_Other","Comm_Ind_Other", "Residential", "Scrub_Shrub", "Forest")
-length(New_MD_Levels)-length(levels(MD_Sh_LU$FEATURE2)) #SHOULD BE 0
+length(New_MD_Levels) - length(levels(MD_Sh_LU$FEATURE2)) #SHOULD BE 0
 
 levels(MD_Sh_LU$FEATURE2) = New_MD_Levels
 
@@ -84,10 +84,12 @@ MD_Sh_LU_Wide = spread(MD_Sh_LU, key = FEATURE2, value = PercentLength, fill=0) 
             )
 
 MD_SAV_Sh = left_join(MD_SAV_Str1, MD_Sh_LU_Wide, by = "Join_ID") %>%
-  select(Structure = STRUCTURE, County = county, sav89_13m2, sav98_13m2, pothabm2, savPCTphab, 
+  select(Structure = STRUCTURE, County = county, #sav89_13m2, sav98_13m2, 
+         Hab_500 = pothabm2, #savPCTphab, 
          SubEst = SUBESTID, Length_m,
          Perc_Ag:Perc_ScrubSh,
-         SAV_250, SAV_500, Pot_250)
+         SAV_250, SAV_500, Hab_250,sstruID) %>%
+  mutate(State = 'MD', State_sstruID = paste(State, sstruID,sep="_"))
 
 
 #Load and Prep Virginia Data ------------------------------------------------- 
@@ -103,13 +105,14 @@ VA_SAV0 = full_join(
   select(VA_SAV_250, SAV_250=VALUE_1, sstruID = SSTRUID),
   'sstruID')
 VA_SAV = full_join(VA_SAV0,
-                   select(VA_Pot_250, Pot_250 = VALUE_1,sstruID=SSTRUID))
+                   select(VA_Pot_250, Hab_250 = VALUE_1, sstruID = SSTRUID))
 
 #Join those to the SAV_Str file
-VA_SAV_Str1 <- left_join(VA_SAV_Str, VA_SAV, 'sstruID')
-VA_SAV_Str1[is.na(VA_SAV_Str1$SAV_500), 'SAV_500']=0
-VA_SAV_Str1[is.na(VA_SAV_Str1$SAV_250), 'SAV_250']=0
-VA_SAV_Str1[is.na(VA_SAV_Str1$Pot_250), 'Pot_250']=0
+VA_SAV_Str1 <- left_join(VA_SAV, VA_SAV_Str, 'sstruID')
+#VA_SAV_Str1[is.na(VA_SAV_Str1$SAV_500), 'SAV_500']=0
+#VA_SAV_Str1[is.na(VA_SAV_Str1$SAV_250), 'SAV_250']=0
+
+
 #Reclassify
 # (Forest, forested, timbered) -> Forest
 # (Commercial, Military, Industrial, Paved) -> Comm_Ind_Other
@@ -134,9 +137,12 @@ VA_Sh_LU_Wide = spread(VA_Sh_LU, key = feature2, value = PercentLength, fill = 0
   )
     #This step creates 257 NAs in Length_m, presumably the whole LU file has NAs here
 VA_SAV_Sh = left_join(VA_SAV_Str1, VA_Sh_LU_Wide, by= "Join_ID" ) %>%
-  select(Structure = STRUCTURE, County = COUNTY, sav89_13m2, sav98_13m2, pothabm2, 
-         savPCTphab, SubEst = SUBESTID, Length_m, Perc_Ag:Perc_ScrubSh,
-         SAV_250, SAV_500, Pot_250)
+  select(Structure = STRUCTURE, 
+         County = COUNTY, #sav89_13m2, sav98_13m2, 
+         Hab_500 = pothabm2, #savPCTphab, 
+         SubEst = SUBESTID, 
+         Length_m, Perc_Ag:Perc_ScrubSh, SAV_250, SAV_500, Hab_250,sstruID) %>%
+  mutate(State = 'VA', State_sstruID = paste(State, sstruID,sep="_"))
 
 
 
@@ -150,14 +156,14 @@ SAV_Sh0 = rbind(VA_SAV_Sh, MD_SAV_Sh)
 #SAV_Sh0 = MD_SAV_Sh
 
 #GIS gave NA to 0 SAV segments, add fields where these are 0, but keep NAs:
-SAV_Sh0 = SAV_Sh0 %>% mutate(Hab_500 = pothabm2, 
-                            OccHab500 = SAV_500/Hab_500,
-                            SAV = SAV_250,
-                            OccHab250 = SAV_250/Pot_250)#savPCTphab)
+SAV_Sh0 = SAV_Sh0 %>% mutate(SAV = SAV_250,
+                             OccHab500 = SAV_500/Hab_500,
+                             OccHab250 = SAV_250/Hab_250)#savPCTphab)
 
 SAV_Sh0[is.na(SAV_Sh0$SAV),c('SAV')] = 0.00001 #This stands in for zero, but is filtered out by the model
+SAV_Sh0[is.na(SAV_Sh0$SAV_500),c('SAV_500')] = 0.00001 #This stands in for zero, but is filtered out by the model
 SAV_Sh0[is.na(SAV_Sh0$Hab_500),'Hab_500'] = 0
-SAV_Sh0[is.na(SAV_Sh0$Pot_250),'Pot_250'] = 0
+SAV_Sh0[is.na(SAV_Sh0$Hab_250),'Hab_250'] = 0
 SAV_Sh0[is.na(SAV_Sh0$OccHab500),'OccHab500'] = 0
 SAV_Sh0[is.na(SAV_Sh0$OccHab250),'OccHab250'] = 0
 
@@ -213,13 +219,13 @@ quantile(SAV_Sh$Length_m, na.rm=TRUE, probs = seq(0,1,.25))
 #SAV_Sh1 = filter(SAV_Sh, Length_m < 125, Length_m > 75) #Range used by Patrick et al
 
 SAV_Sh1 = filter(SAV_Sh, Structure %in% c('Bulkhead', 'Riprap','Natural'),
-                 Length_m < 125, Length_m > 75, Pot_250>0,
+                 Length_m < 125, Length_m > 75, #Hab_250>0,
                  SALINZONE %in% c('OH', 'MH', 'PH'))#,
                  #!is.na(Pot_250a))
 SAV_Sh1$Structure = factor(SAV_Sh1$Structure, levels(SAV_Sh1$Structure)[c(5,6,1)])
 SAV_Sh1$SALINZONE = factor(SAV_Sh1$SALINZONE)
 
-plot(SAV_250~Pot_250, data = SAV_Sh1)
+plot(SAV_250~Hab_250, data = SAV_Sh1)
 plot(SAV_250~SAV_500, data = SAV_Sh1)
 plot(SAV_500~Hab_500, data = SAV_Sh1)
 #SAV_Sh1[SAV_Sh1$SAV_250==max(SAV_Sh1$SAV_250),]

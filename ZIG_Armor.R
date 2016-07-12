@@ -13,7 +13,8 @@ model{
     # Presence
     #w[i] <- w_1[i]#min(max(.1,w_1[i]),.9)
     w[i] <- ilogit(alpha_PA + mu_SE_PA[SubEst[i]] + B_BH_PA * BH[i] + B_RR_PA * RR[i] +
-                     B_BH_Sal_PA[Sal[i]]*BH[i] + B_RR_Sal_PA[Sal[i]]*RR[i])
+                     B_BH_Sal_PA[Sal[i]]*BH[i] + B_RR_Sal_PA[Sal[i]]*RR[i] +
+                     B_Mar_PA*Perc_Marsh[i])
   
     
     # Abundance
@@ -25,7 +26,8 @@ model{
     SAV_hat[i] <- Prop[i]*Hab[i] 
     #Prop_adj[i] <- Prop[i]# min(max(.1,Prop[i]), .9)
     Prop[i] <- ilogit(alpha + mu_SE[SubEst[i]] + B_BH * BH[i] + B_RR * RR[i] +
-                        B_BH_Sal[Sal[i]]*BH[i] + B_RR_Sal[Sal[i]]*RR[i])
+                        B_BH_Sal[Sal[i]]*BH[i] + B_RR_Sal[Sal[i]]*RR[i] +
+                        B_Mar*Perc_Marsh[i])
     
     # define the total likelihood, where the likelihood is (1 - w) if y = 0 (z = 0) or
     # the likelihood is w * gammalik if y >= 0.0001 (z = 1). So if z = 1, then the first bit must be
@@ -85,11 +87,13 @@ model{
   
   B_BH ~ dnorm(0, .001)
   B_RR ~ dnorm(0, .001)
+  B_Mar ~ dnorm(0, .001)
   B_SubBH ~ dnorm(0, .001)
   B_SubRR ~ dnorm(0, .001)
   
   B_BH_PA ~ dnorm(0, .001)
   B_RR_PA ~ dnorm(0, .001)
+  B_Mar_PA ~ dnorm(0, .001)
   B_SubBH_PA ~ dnorm(0, .001)
   B_SubRR_PA ~ dnorm(0, .001)
   

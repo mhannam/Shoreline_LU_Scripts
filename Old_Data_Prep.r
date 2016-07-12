@@ -6,7 +6,7 @@ Old_SAV = read.csv('L:\\Hannam\\SAV\\Data\\Shoreline_LU\\Shoreline_Landuse_Comm_
 #Model Data Prep -------------------------------
 
 #Sample the data
-Old_SAV.samp = Old_SAV %>% group_by(River) %>% sample_frac(.5) %>%
+Old_SAV.samp = Old_SAV %>% group_by(River) %>% sample_frac(1) %>%
   filter(PTHab_Area>0) #sample_n(50) 
 Old_SAV.samp$SubEst = factor(Old_SAV.samp$River)
 

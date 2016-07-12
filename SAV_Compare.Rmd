@@ -1,0 +1,66 @@
+---
+title: "SAV_Compare"
+author: "Michael Hannam"
+date: "July 11, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(lme4)
+```
+
+## Start with data from Chris's paper
+
+The data come from "L:\RyderM\ArcGIS\NOAA_CSCOR\PatchScale\Multi_buf\sstru_Grouped_50_125_250mBuf_FINAL.shp", exported as a csv.
+Below we load the file, filter out shoreline structures other than Bulkhead, Natural, and Rip Rap, shoreline segments with no habitat, Tidal Fresh, and shoreline lengths shorter than 75 m. The We calculate occupied habitat as SAV Area/Habitat Area.
+
+```{r Load_Chris_Data}
+Chris_File     = "L:/Hannam/SAV/Shoreline_LU/sstru_Grouped_50_125_250mBuf_lubc_SubEst.txt"
+CP_SAV <- read.csv(Chris_File)
+CP_SAV2 <- filter(CP_SAV, GROUPED %in% c('Bulkhead', 'Natural','Riprap'), 
+                  #PTHAB_AREA > 0,
+                  #struGlngth >.075,
+                  SALINITY %in% c('MH', 'PH', 'OH'))
+CP_SAV2$OccHab = with(CP_SAV2, SAV_AREA/max(PTHAB_AREA,SAV_AREA)) # create occ hab and deal with SAV > Occhab
+CP_SAV2$GROUPED = factor(CP_SAV2$GROUPED, levels(CP_SAV2$GROUPED)[c(6,7,2)]) # reorder factor levels
+
+```
+
+
+```{r}
+dim(CP_SAV)
+dim(filter(CP_SAV, PTHAB_AREA==0))
+```
+
+Next we'll approximate Chris's sample, taking 250 locations from each combination of Salinity Zone and Shoreline Structure. I am not ensuring that none of the samples overlap, as Chris's paper reported having done. Hopefully this is close enough for comparison's sake.
+
+```{r sample}
+CP_SAV_Samp = CP_SAV2 %>% group_by(SALINITY, GROUPED) %>% sample_n(250)
+```
+
+Next we'll look at some quick models from both the sampled, and full dataset:
+```{r}
+summary(aov(OccHab~SALINITY*GROUPED, data = CP_SAV_Samp))
+summary(lm(OccHab~SALINITY*GROUPED, data = CP_SAV_Samp))
+summary(aov(OccHab~SALINITY*GROUPED, data = CP_SAV2))
+summary(lm(OccHab~SALINITY*GROUPED, data = CP_SAV2))
+
+summary(lmer(OccHab~SALINITY*GROUPED + (1|SUBEST_ID), data = CP_SAV2))
+```
+
+```{r}
+CP_SAV_Subest = filter(CP_SAV2, SUBEST_ID !='')
+dim(CP_SAV2)
+dim(CP_SAV_Subest)
+```
+
+
+```{r}
+summary(aov(OccHab~SALINITY*GROUPED, data = CP_SAV_Subest))
+summary(lm(OccHab~SALINITY*GROUPED, data = CP_SAV_Subest))
+
+summary(lmer(OccHab~SALINITY*GROUPED + (1|SUBEST_ID), data = CP_SAV_Subest))
+```
+
