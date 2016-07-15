@@ -28,12 +28,16 @@ SubEstSAVFile  = "L:\\Hannam\\SAV\\Data\\NOAA_CSCOR\\SubEstSAV_Abundance_Summary
 #VA_SAV_250file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\OLD_DELETE\\eucasstruVA_b9813sub250va_lte250.csv"
 VA_SAV_500file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstruvaJ_beds9813_1m.txt"
 VA_SAV_250file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS2_eucasstruvaJ_va1m_sav250.txt"
+VA_SAV_100file = 
 VA_PtHab_250file   = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstruvaJ_va1m_pot250.txt"
-
+VA_file = "L:/Hannam/SAV/Data/Shoreline_LU/Special_Issue_Data/VA_SAV_Str_LU.txt"
+  
 #MD_SAV_250file = 
 MD_SAV_500file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstrumdJ_beds9813_1m.txt"
 MD_SAV_250file = "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstrumdJ_md1m_beds250.txt"
+MD_SAV_100file = 
 MD_PtHab_250file =   "L:\\Williams\\GIS\\ForMike\\SAVTabulateArea\\ReTestMerge9813\\SAVSUMS_eucasstrumdJ_md1m_pot250.txt"
+MD_file = "L:/Hannam/SAV/Data/Shoreline_LU/Special_Issue_Data/MD_SAV_Str_LU.csv"
 
 #Load Chris's data -----------------------------------------------------------
 CP_SAV <- read.csv(Chris_File)
@@ -61,7 +65,9 @@ MD_SAV = full_join(MD_SAV0,
   select(MD_Pot_250, Hab_250 = VALUE_1, sstruID = SSTRUID))
 
 #Join those to the SAV_Str file
-MD_SAV_Str1 <- left_join(MD_SAV, MD_SAV_Str, 'sstruID')
+#MD_SAV_Str1 <- left_join(MD_SAV, MD_SAV_Str, 'sstruID') # This drops potential habitat = 0 (b/c 0 is missing in original data)
+MD_SAV_Str1 <- full_join(MD_SAV, MD_SAV_Str, 'sstruID')  # This keeps potential habitat = 0
+
 #MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_500), 'SAV_500'] = 0
 #MD_SAV_Str1[is.na(MD_SAV_Str1$SAV_250), 'SAV_250'] = 0
 
@@ -80,7 +86,9 @@ MD_Sh_LU_Wide = spread(MD_Sh_LU, key = FEATURE2, value = PercentLength, fill=0) 
             Perc_Res = sum(Residential),
             Perc_Forest = sum(Forest),
             Perc_Grass = sum(Grass), 
-            Perc_ScrubSh = sum(Scrub_Shrub)
+            Perc_ScrubSh = sum(Scrub_Shrub),
+            Perc_Blank = sum(Blank),
+            Perc_Bare  = sum(Bare)
             )
 
 MD_SAV_Sh = left_join(MD_SAV_Str1, MD_Sh_LU_Wide, by = "Join_ID") %>%
@@ -91,6 +99,32 @@ MD_SAV_Sh = left_join(MD_SAV_Str1, MD_Sh_LU_Wide, by = "Join_ID") %>%
          SAV_250, SAV_500, Hab_250,sstruID) %>%
   mutate(State = 'MD', State_sstruID = paste(State, sstruID,sep="_"))
 
+# Use newer table that is pre-joined: -----------------------------------
+MD_SAV_new = read.csv(MD_file)
+
+MD_SAV_Sh2 = MD_SAV_new %>% select(
+  Structure = STRUCTURE,
+  Hab_500 = poth500,
+  Hab_250 = poth250,
+  Hab_100 = poth100,
+  SubEst = SUBESTID,
+  Length_m = SUM_Length_METERS,
+  Perc_Ag:Perc_ScrubSh, 
+  SAV_500 = sav500, SAV_250 = sav250, SAV_100 = sav100, ST_STRUID
+)
+
+VA_SAV_new = read.csv(VA_file)
+
+VA_SAV_Sh2 = VA_SAV_new %>% select(
+  Structure = STRUCTURE,
+  Hab_500 = poth500,
+  Hab_250 = poth250,
+  Hab_100 = poth100,
+  SubEst = SUBESTID,
+  Length_m = SUM_Length_METERS,
+  Perc_Ag:Perc_ScrubSh, 
+  SAV_500 = sav500, SAV_250 = sav250, SAV_100 = sav100, ST_STRUID
+)
 
 #Load and Prep Virginia Data ------------------------------------------------- 
 VA_SAV_Str <- read.csv(VA_SAV_StrFile)
@@ -108,7 +142,8 @@ VA_SAV = full_join(VA_SAV0,
                    select(VA_Pot_250, Hab_250 = VALUE_1, sstruID = SSTRUID))
 
 #Join those to the SAV_Str file
-VA_SAV_Str1 <- left_join(VA_SAV, VA_SAV_Str, 'sstruID')
+#VA_SAV_Str1 <- left_join(VA_SAV, VA_SAV_Str, 'sstruID')
+VA_SAV_Str1 <- full_join(VA_SAV, VA_SAV_Str, 'sstruID')
 #VA_SAV_Str1[is.na(VA_SAV_Str1$SAV_500), 'SAV_500']=0
 #VA_SAV_Str1[is.na(VA_SAV_Str1$SAV_250), 'SAV_250']=0
 
@@ -133,8 +168,10 @@ VA_Sh_LU_Wide = spread(VA_Sh_LU, key = feature2, value = PercentLength, fill = 0
             Perc_Res      = sum(Residential),
             Perc_Forest   = sum(Forest),
             Perc_Grass    = sum(Grass), 
-            Perc_ScrubSh  = sum(Scrub_Shrub)
-  )
+            Perc_ScrubSh  = sum(Scrub_Shrub),
+            Perc_Blank = sum(Blank),
+            Perc_Bare  = sum(Bare)
+            )
     #This step creates 257 NAs in Length_m, presumably the whole LU file has NAs here
 VA_SAV_Sh = left_join(VA_SAV_Str1, VA_Sh_LU_Wide, by= "Join_ID" ) %>%
   select(Structure = STRUCTURE, 
@@ -151,12 +188,14 @@ summary(MD_SAV_Sh)
 
 #Combine----------------------------------------
 SAV_Sh0 = rbind(VA_SAV_Sh, MD_SAV_Sh)
+SAV_Sh02 = rbind(VA_SAV_Sh2, MD_SAV_Sh2)
 
 #TO ANALYZE ONLY MD DATA: ################-------------------------------
 #SAV_Sh0 = MD_SAV_Sh
 
 #GIS gave NA to 0 SAV segments, add fields where these are 0, but keep NAs:
-SAV_Sh0 = SAV_Sh0 %>% mutate(SAV = SAV_250,
+SAV_Sh0 = SAV_Sh02 %>% mutate(SAV = SAV_250,
+                              OccHab100 = SAV_100/Hab_100,
                              OccHab500 = SAV_500/Hab_500,
                              OccHab250 = SAV_250/Hab_250)#savPCTphab)
 
@@ -194,7 +233,7 @@ SubEst_Sel = left_join(SubEst_Sel, SubEstHuc_Sel )
 SAV_Sh = left_join(SAV_Sh0, SubEst_Sel)#, by = c("SubEst"="CODE"))
 SAV_Sh$SubEst = factor(SAV_Sh$SubEst)
 
-#Drop NA subestuary records
+#Drop NA subestuary records about 175 of these
 SAV_Sh = SAV_Sh[SAV_Sh$SubEst!='',]
 SAV_Sh$SubEst = factor(SAV_Sh$SubEst)
 
@@ -230,3 +269,13 @@ plot(SAV_250~SAV_500, data = SAV_Sh1)
 plot(SAV_500~Hab_500, data = SAV_Sh1)
 #SAV_Sh1[SAV_Sh1$SAV_250==max(SAV_Sh1$SAV_250),]
 
+SAV_Subest = SAV_Sh %>% group_by(SubEst) %>% summarise(
+  SAV_250 = sum(SAV), 
+  SAV_500 = sum(SAV_500),
+  Hab_250 = sum(Hab_250),
+  Hab_500 = sum(Hab_500),
+  Perc_BH = sum(Length_m*as.numeric(Structure=='Bulkhead'))/sum(Length_m),
+  Perc_RR = sum(Length_m*as.numeric(Structure=='Riprap'))/sum(Length_m),
+  Sal     = first(SALINZONE),
+  Perc_BH2 = max(BulkheadPerc)
+)

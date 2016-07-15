@@ -4,8 +4,8 @@ library(dplyr)
 library(lme4)
 
 varcomp.lmer = lmer(SAV/10000~SALINZONE+(1|HUC_8/SubEst), data = SAV_Sh.samp)
-armor.lmer = lmer(OccHab250~SALINZONE*Structure + (1|SubEst), 
-                   data = SAV_Sh.samp)#, family = poisson(link='log'))
+armor.lmer = lmer(OccHab250~Structure*SALINZONE + (1|SubEst), 
+                   data = SAV_Sh.samp)#, na.action = na.fail)#, family = poisson(link='log'))
 
 my.inits = list(list('sig_SE' = 1.7, 'sig_RS' = .36, 'sig_St'= 2.7,
                      'B_Sal[1]'= .35, 'B_Sal[2]' = 1.2, 'B_Sal[3]' = .86,'B_Sal[4]' = 5.3),

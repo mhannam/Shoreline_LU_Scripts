@@ -21,7 +21,7 @@ Chris_File     = "L:/Hannam/SAV/Shoreline_LU/sstru_Grouped_50_125_250mBuf_lubc_S
 CP_SAV <- read.csv(Chris_File)
 CP_SAV2 <- filter(CP_SAV, GROUPED %in% c('Bulkhead', 'Natural','Riprap'), 
                   #PTHAB_AREA > 0,
-                  #struGlngth >.075,
+                  struGlngth >.075,
                   SALINITY %in% c('MH', 'PH', 'OH'))
 CP_SAV2$OccHab = with(CP_SAV2, SAV_AREA/max(PTHAB_AREA,SAV_AREA)) # create occ hab and deal with SAV > Occhab
 CP_SAV2$GROUPED = factor(CP_SAV2$GROUPED, levels(CP_SAV2$GROUPED)[c(6,7,2)]) # reorder factor levels
@@ -62,5 +62,19 @@ summary(aov(OccHab~SALINITY*GROUPED, data = CP_SAV_Subest))
 summary(lm(OccHab~SALINITY*GROUPED, data = CP_SAV_Subest))
 
 summary(lmer(OccHab~SALINITY*GROUPED + (1|SUBEST_ID), data = CP_SAV_Subest))
+```
+
+
+
+```{r compare_joined_data}
+MD_Join = read.csv("L:/Hannam/SAV/Shoreline_LU/MD_MW_CP_Join6.txt")
+VA_Join = read.csv("L:/Hannam/SAV/Shoreline_LU/VA_MW_CP_Join2.txt")
+
+MD_Join$CP_OccHab = MD_Join$Avg_SAV_AREA/max(MD_Join$Avg_SAV_AREA, MD_Join$Avg_PTHAB_AREA)
+VA_Join$CP_OccHab = VA_Join$Avg_SAV_AR/ max(VA_Join$Avg_SAV_AR, VA_Join$Avg_PTHAB_)
+
+plot(VA_Join$CP_OccHab,VA_Join$sav250/VA_Join$poth250)
+plot(MDeucasstruMetrics_sav250/MDeucasstruMetrics_poth250~CP_OccHab, data = MD_Join)
+
 ```
 
